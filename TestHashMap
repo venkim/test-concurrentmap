@@ -1,0 +1,121 @@
+package com.venkat.concurrency;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+/*
+ * TestHashMap
+ * Shows trying to add and remove
+ * key and values from a hashmap
+ * and 
+ * also from a concurrenthashmap
+ * and
+ * show that hashmap - cannot handle concurrent mods
+ * whereas
+ * concurrent hashmap - handles concurrent add and removal 
+ * from different threads.
+ */
+public class TestHashMap {
+    public static void main(String[] args) {
+        // create map
+        Map<String,String> map = new HashMap<String,String>();
+    
+        // populate the map
+        map.put("1","ALIVE ");
+        map.put("2","IS");
+        map.put("3","AWESOME");
+
+        // this thread is going to try to put values into map
+        Thread t1 = new Thread( new Runnable() {
+        	public void run(){
+        		try {
+	        		for(int i = 0 ; i < 100 ; i++){
+		        		map.put("4"+i*Math.random(), "Kachak");
+		        		map.put("5"+i*Math.random(), "Muchak");
+		        		map.put("6"+i*Math.random(), "Pachak");
+	        		}
+        		} catch (Exception ie){
+        			System.out.println("caught exception: " + ie.getMessage() + "  " + ie.toString() + " " + ie.getStackTrace() );
+        		}
+        	}
+        });
+        t1.start() ;
+        
+        // concurrently this thread is going to
+        // print and remove some entries.
+        Thread t2 = new Thread( new Runnable() {
+        	public void run(){
+        		int kk = 10;
+        		try {
+			        for(String st:map.keySet()){
+			        	System.out.println(" key is " + st + "value is " +map.get(st)) ;
+			        	if (kk % 2 == 0)
+			        		map.remove(st);
+			        	kk++;
+		        }
+        		} catch (Exception ie){
+        			System.out.println("caught exception: " + ie.getMessage() + "  " + ie.toString() + " " + ie.getStackTrace() );
+        		}
+        	}
+        });
+        t2.start();
+        
+        // wait for both threads to finish
+        try {
+	        t1.join();
+	        t2.join();
+        } catch (Exception ie){
+        	System.out.println("Interruption exception likely " + ie.getMessage() + " " + ie.getCause()  ); 
+        }
+        // map is 
+        System.out.println(" map is :"+map);
+        // create a concurrent map
+        map.clear();
+        
+        System.out.println("All synced up with threads - and moving on...");
+        
+        
+        // populate the map
+        map.put("1","ALIVE ");
+        map.put("2","IS");
+        map.put("3","AWESOME");
+        
+        Map<String,String> concMap = new ConcurrentHashMap(map);
+        
+        System.out.println("Concurrent map :"+concMap);
+        
+        // this thread is going to try to put values into map
+        new Thread( new Runnable() {
+        	public void run(){
+        		
+	        		for(int i = 0 ; i < 100 ; i++){
+		        		concMap.put("4"+i*Math.random(), "Kachak");
+		        		concMap.put("5"+i*Math.random(), "Muchak");
+		        		concMap.put("6"+i*Math.random(), "Pachak");
+	        		}
+       
+        	}
+        }).start() ;
+        
+        // concurrently this thread is going to
+        // print and remove a few - concurrent modification test
+        new Thread( new Runnable() {
+        	public void run(){
+        		int kk = 10;
+        		try {
+        			
+				        for(String st:concMap.keySet()){
+				        	System.out.println(" key is " + st + "value is " +concMap.get(st)) ;
+				        	if (kk % 2 == 0)
+				        		concMap.remove(st);
+				        	kk++;
+				        }
+        	
+        		} catch (Exception ie){
+        			System.out.println("caught exception: " + ie.getMessage() + "  " + ie.toString() + " " + ie.getStackTrace() );
+        		}
+        	}
+        }).start();
+        
+        
+    }
+}
